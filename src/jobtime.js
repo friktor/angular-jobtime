@@ -55,7 +55,6 @@ class JobTime {
     $scope.remove = this.removeDay;
     $scope.allowed = this.allowed;
     $scope.save = this.save;
-    $scope.log = () => {console.log($scope.week);};
 
     /* watch tags on changes */
     $scope.$watch('tags', this.tagsIsToggle, true);
@@ -107,6 +106,9 @@ class JobTime {
       /* add new everyday record */
       this.newDay({key: "everyday", start: "09.00", end: "17.00"}, true, "everyday");
     }
+
+    /* clean week if everyday disable */
+    if (!everyday && everyday != old.everyday) this.removeDay('everyday');
   }
 
   /* local week schema */
@@ -120,7 +122,6 @@ class JobTime {
           let {start, end} = $day; /* get values */
           /* set object value as Proxy */
           $scope.week[day] = this.newDay({
-            weekend: index == 1 ? true : false,
             start: start, end: end, key: day
           }, false);
         }
@@ -131,7 +132,7 @@ class JobTime {
   /* create day object with handler - and add to store or return */
   newDay(day, add, flag) {
     var $scope = this.$scope, week = $scope.week;
-    var data = { weekend: null, start: "09.00", end: "17.00", key: "unnamed" };
+    var data = { start: "09.00", end: "17.00", key: "unnamed" };
     /* if set new value - call handler*/
     var $day = new Proxy(add ? (flag ? day : data) : day, { set: this.handlerProxyDay });
     /* if flag add is active add to local week store */
@@ -145,7 +146,27 @@ class JobTime {
   }
 
   /* remove exists day from local store */
-  removeDay(key) { delete this.$scope.week[key]; }
+  removeDay(key) {
+    var $scope = this.$scope;
+    if (key == "everyday") $scope.tags.everyday = false;
+    /* WTF, if after remove object size is 0, view not updated */
+    delete $scope.week[key];
+
+    var keys = Object.keys($scope.week);
+
+    /* crutch again in view of the life cycle */
+    if (keys.length == 1) {
+      for (var m = 0; m < this.mixins.length; m++) { let mixin = this.mixins[m];
+        if (keys[0] == mixin) { this.newDay(null, true); break; }
+      }
+    }
+
+    /* Bug life cycle - view does not update when the last element.
+       Crutch - Add an empty element if all removed.
+    */
+    if (keys.length == 0) this.newDay(null, true);
+
+  }
 
   /* proxy hanler if change values */
   handlerProxyDay(target, name, value) {
@@ -158,6 +179,7 @@ class JobTime {
     } else {
       target[name] = value;
     }
+
     /* complete success */
     return true;
   }
@@ -172,9 +194,16 @@ class JobTime {
       let $day = $scope.week[day]; /* get day */
       var {start, end, key} = $day; /* get values */
       /* set new value in global store */
-      if (start && end && key != "unnamed" && typeof($day) != 'function') $scope.days[day] = { start: start, end: end };
+      if (start && end && key != "unnamed" && typeof($day) != 'function') {
+        let $start = start.split('.'), $end = end.split('.');
+        if ((start[0] < end[0])) $scope.days[day] = { start: start, end: end };
+        else errors.push(`${day} - start time gretter than end time`);
+      }
       /* add errors if not values */
-      else errors.push(day);
+      else {
+        /* It is also involved in the iteration function prototype renameKey - if it comes - ignore. */
+        if (typeof($day) != 'function') errors.push(key)
+      };
     }
   }
 }
