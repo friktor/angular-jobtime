@@ -44,5 +44,5 @@ gulp.task('clean.css',  del.bind(null, ['build/angular-material.css']));
 gulp.task('clean.html', del.bind(null, ['build/index.html']));
 gulp.task('clean.js',   del.bind(null, ['build/bundle.js']));
 
-gulp.task('default', ['serve', 'watch', 'js', 'html', 'material']);
+gulp.task('default', ['serve', 'watch', 'js', 'html', 'material', 'html.partials']);
 console.log('*********\nlisten on http://localhost:1337/\n*********');

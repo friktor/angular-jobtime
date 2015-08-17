@@ -32,7 +32,7 @@
   <div class="topbar">
     <h4 class="header">Time & Days of work</h4>
     <div class="tag-props">
-      <md-checkbox ng-model="tags.week">
+      <md-checkbox ng-model="tags.everyday">
         Everyday
       </md-checkbox>
     </div>
@@ -43,25 +43,31 @@
     </div>
   </div>
   <div class="content">
-    <div class="item" ng-repeat="day in days">
-      <a ng-click="remove(day)">X</a>
-      <md-select ng-model="day.day" aria-label="day select">
-        <md-option ng-value="sdw" ng-repeat="sdw in allowedDays">{{sdw}}</md-option>
-        <md-option ng-value="day.day">{{day.day}}</md-option>
+    <div class="item" ng-repeat="(key, value) in week">
+      <a ng-click="remove(key)">X</a>
+      <md-select ng-model="value.key" aria-label="day select">
+        <md-option ng-value="key">{{key}}</md-option>
+        <md-option ng-value="$day" ng-repeat="(index, $day) in allowed()">{{$day}}</md-option>
       </md-select>
       <md-input-container class="time">
         <label>Start time</label>
-        <input ng-disabled="tags.around" ng-model="day.start" validtime>
+        <input ng-disabled="tags.around" ng-model="value.start" validtime="value.end">
       </md-input-container>
       <md-input-container class="time">
         <label>End time</label>
-        <input ng-disabled="tags.around" ng-model="day.end" validtime>
+        <input ng-disabled="tags.around" ng-model="value.end" validtime>
       </md-input-container>
+    </div>
+    <div class="errors">
+      <span ng-repeat="error in errors">{{error}} <br></span>
     </div>
   </div>
   <div class="center">
-    <md-button class="md-warn" ng-click="create()">
+    <md-button class="md-warn" ng-click="newDay()">
       + Add More
+    </md-button>
+    <md-button class="md-warn" ng-click="save()">
+      Save
     </md-button>
   </div>
 </div>

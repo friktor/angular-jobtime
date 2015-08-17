@@ -1,160 +1,189 @@
-var angular = require('angular');
+Object.prototype.renameKey = function (Old, New) {
+    if (Old == New) return this;
+
+    if (this.hasOwnProperty(Old)) {
+        this[New] = this[Old];
+        delete this[Old];
+    }
+    return this;
+};
 
 /* valid function for valid time string format */
 /* 24 hours format */
 function validTime(time) {
   var time = time.split('.');
-  return ((time[0] >= 0 && time[0] < 24) && (time[1] >= 0 && time[1] < 60));
+  return (
+    (time[0] >= 0 && time[0] < 24) && (time[1] >= 0 && time[1] < 60)
+  );
 }
 
-/* Class directive widget for manipulate job time. */
+/* main directive class */
 class JobTime {
   constructor() {
-    /* days of week*/
-    this.workday = [ "monday", "tuesday", "wednesday", "thursday", "friday" ];
-    this.weekend = [ "saturday", "sunday" ];
-    this.actions = [ "everyday", "workday", "weekend" ];
-    this.week = this.workday.concat(this.weekend);
-
-    /* default props this directive */
     this.templateUrl = "partials/jobtime.html";
-    this.scope = { days: "=" };
+    this.$scope = { days: "=" };
     this.restrict = "E";
+
+    this.workday = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+    this.weekend = ["saturday", "sunday"];
+
+    this.mixins = ["everyday", "workday", "weekend"];
+    this.week = this.workday.concat(this.weekend);
   }
 
-  link($scope, $element, $attr) {
-    /* scope to global */
+  link($scope, $element, $attrs) {
+    /* link scope in global instance */
     this.$scope = $scope;
 
-    /* bind functions change data */
-    this.allowedDays = this.allowedDays.bind(this);
-    this.create = this.create.bind(this);
-    this.remove = this.remove.bind(this);
+    /* init scope values */
+    $scope.tags = { everyday: false, around: false };
+    $scope.errors = [];
+    $scope.week = {};
 
-    /* bind utils */
-    this.toggle = this.toggle.bind(this);
-    this.enableAround = this.enableAround.bind(this);
-    this.enableWeek = this.enableWeek.bind(this);
+    /* bind utils after mount */
+    this.handlerProxyDay = this.handlerProxyDay.bind(this);
+    this.tagsIsToggle = this.tagsIsToggle.bind(this);
+    this.setLocalWeek = this.setLocalWeek.bind(this);
+    this.onWeekUpdate = this.onWeekUpdate.bind(this);
+    this.removeDay = this.removeDay.bind(this);
+    this.allowed = this.allowed.bind(this);
+    this.newDay = this.newDay.bind(this);
+    this.save = this.save.bind(this);
 
-    /* set helpers in scope*/
-    $scope.toggle = this.toggle;
-    $scope.remove = this.remove;
-    $scope.create = this.create;
+    /* scope helpers */
+    $scope.newDay = this.newDay.bind(this, null, true);
+    $scope.remove = this.removeDay;
+    $scope.allowed = this.allowed;
+    $scope.save = this.save;
+    $scope.log = () => {console.log($scope.week);};
 
-    /* days of week */
-    $scope.week = this.week;
+    /* watch tags on changes */
+    $scope.$watch('tags', this.tagsIsToggle, true);
+    $scope.$watch('week', this.onWeekUpdate, true);
 
-    /* tags for math*/
-    $scope.tags = {
-      around: false, /* around a clock - 24 hours */
-      week: false /* everyday - 7/7 */
-    };
-
-    /* store to monitor changes and rebuild the permitted days */
-    $scope.$watch('days', this.allowedDays, true);
-    $scope.$watch('tags', this.toggle, true);
+    /* create local week store*/
+    this.setLocalWeek();
   }
 
-  allowedDays () {
-    var $scope = this.$scope, self = this;
-    var allowed = angular.copy($scope.week).concat(this.actions);
+  onWeekUpdate() {
+    var $scope = this.$scope, week = $scope.week, self = this;
 
-    /* check for, and remove from the solution if there is */
-    for (var i = 0; i < $scope.days.length; i++)
-      allowed.splice(allowed.indexOf($scope.days[i].day), 1);
-
-    /* block all if everyday */
-    for (var i = 0; i < $scope.days.length; i++) { var day = $scope.days[i];
-      if (day.day == "everyday") { $scope.days = [day]; break; }
-    }
-
-    /* clear workday for actions */
-    for (var i = 0; i < $scope.days.length; i++) { var day = $scope.days[i].day;
-      if (day == "workday") { $scope.days = this.clearDays($scope.days, this.workday, true); break; }
-    }
-
-    /* set to store */
-    $scope.allowedDays = allowed;
+    if (week.everyday) $scope.tags.everyday = true;
+    if (week.workday) this.workday.forEach((day) => { if (week[day]) self.removeDay(day); });
+    if (week.weekend) this.weekend.forEach((day) => { if (week[day]) self.removeDay(day); });
   }
 
-  clearDays(arr, values, full) {
-    var target = []; for (var i = 0; i < arr.length; i++) {  var item = arr[i];
-      if (values.indexOf(item.day) == -1) target.push(full ? item : item.day);
+  allowed(defaults) {
+    var $scope = this.$scope, allowed = [];
+    function verify(week) {
+      week.forEach((day, index) => { if (!$scope.week[day]) allowed.push(day); });
     }
-    return target;
+
+    if (!$scope.tags.everyday) {
+      if (!$scope.week.everyday) allowed.push("everyday");
+      if (!$scope.week.workday) { allowed.push("workday"); verify(this.workday); };
+      if (!$scope.week.weekend) { allowed.push("weekend"); verify(this.weekend); };
+    }
+
+    return allowed;
   }
 
-  existsDay(days, names) {
-    var exists = false;
-    for (var i = 0; i < days.length; i++) {
-      for (var ni = 0; ni < names.length; ni++) {
-        if (days[i].day == names[ni]) {
-          exists = true; break;
-        }
+  tagsIsToggle(values, old) {
+    var $scope = this.$scope;
+    var {around, everyday} = values;
+    /* enable from changes */
+
+    if (around && around != old.around) {
+      for (var day in $scope.week) {
+        angular.extend($scope.week[day], {
+          start: "00.00", end: "24.00"
+        });
       }
     }
-    return exists;
+
+    if (everyday && everyday != old.everyday) {
+      /* clear local store*/
+      $scope.week = {};
+      /* add new everyday record */
+      this.newDay({key: "everyday", start: "09.00", end: "17.00"}, true, "everyday");
+    }
   }
 
-  create(time, flag) {
-    var $scope = this.$scope, invalid = false;
-    /* iterate & valid all days store*/
-    for (var i = 0; i<$scope.days.length; i++) {
-      var day = $scope.days[i];
-      /* if item not valid - tag as invalid*/
-      if (!this.validDay(day))
-        invalid = true;
-    };
-    /* if all valid & not empty item - push new*/
-    if (!invalid) $scope.days.push({
-      start: time ? time.start : "09.00",
-      end: time ? time.end : "17.00",
-      day: flag ? flag : null
+  /* local week schema */
+  setLocalWeek() {
+    var $scope = this.$scope, store = $scope.days, self = this;
+    [this.workday, this.weekend].forEach((days, index) => {
+      days.forEach((day, i) => {
+        var $day = store[day]; /* day data from global store */
+        /* set value for local store in instance*/
+        if ($day) {
+          let {start, end} = $day; /* get values */
+          /* set object value as Proxy */
+          $scope.week[day] = this.newDay({
+            weekend: index == 1 ? true : false,
+            start: start, end: end, key: day
+          }, false);
+        }
+      });
     });
   }
 
-  validDay(day) {
-    /* if day is null - invalid*/
-    if (day.day == null) return false;
-    /* if start or end time not match pattern - invalid */
-    if (!validTime(day.start) || !validTime(day.end)) return false;
+  /* create day object with handler - and add to store or return */
+  newDay(day, add, flag) {
+    var $scope = this.$scope, week = $scope.week;
+    var data = { weekend: null, start: "09.00", end: "17.00", key: "unnamed" };
+    /* if set new value - call handler*/
+    var $day = new Proxy(add ? (flag ? day : data) : day, { set: this.handlerProxyDay });
+    /* if flag add is active add to local week store */
+    if (add) {
+      flag = flag ? flag : "unnamed";
+      if (!week.unnamed) week[flag] = $day;
+      else $scope.errors.push("blank field");
+    }
+    /* else return proxy object */
+    else return $day;
+  }
+
+  /* remove exists day from local store */
+  removeDay(key) { delete this.$scope.week[key]; }
+
+  /* proxy hanler if change values */
+  handlerProxyDay(target, name, value) {
+    var $scope = this.$scope, oldname = target[name];
+    if (name == "key") {
+      /* set new key value */
+      target[name] = value;
+      /* update object key name in week scope object */
+      $scope.week.renameKey(oldname, target[name]);
+    } else {
+      target[name] = value;
+    }
+    /* complete success */
     return true;
   }
 
-  /* remove target item */
-  remove(day) {
-    var $scope = this.$scope, i = $scope.days.indexOf(day);
-    $scope.days.splice(i, 1);
-  }
-
-  toggle(values, old) {
-    var $scope = this.$scope;
-    var {around, week} = values;
-    /* enable from changes */
-    if (around && around != old.around) this.enableAround();
-    if (week && week != old.week) this.enableWeek();
-  }
-
-  enableAround() {
-    var $scope = this.$scope;
-    for (var i = 0; i < $scope.days.length; i++) {
-      /* after block input - set around the clock*/
-      angular.extend($scope.days[i], {
-        start: "00.00",
-        end: "24.00"
-      });
+  /* save data in global binding */
+  save() {
+    var $scope = this.$scope, errors = $scope.errors = [];
+    // Clear
+    $scope.days = {};
+    /* verify days in week - and add to store if valid */
+    for (var day in $scope.week) {
+      let $day = $scope.week[day]; /* get day */
+      var {start, end, key} = $day; /* get values */
+      /* set new value in global store */
+      if (start && end && key != "unnamed" && typeof($day) != 'function') $scope.days[day] = { start: start, end: end };
+      /* add errors if not values */
+      else errors.push(day);
     }
-  }
-
-  enableWeek(time) {
-    var $scope = this.$scope; $scope.days = [];
-    this.create(time, "everyday");
   }
 }
 
 /* Directive for validate time format */
 class TimeValidator {
-  constructor() { this.require = "ngModel"; }
+  constructor() {
+    this.require = "ngModel";
+  }
 
   link($scope, $element, $attrs, ctrl) {
     ctrl.$validators.validtime = (model, view) => {
@@ -164,8 +193,4 @@ class TimeValidator {
   }
 }
 
-/* export classes as module */
-module.exports = {
-  TimeValidator: TimeValidator,
-  JobTime: JobTime
-};
+export {JobTime, TimeValidator};
