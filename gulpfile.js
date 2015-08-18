@@ -4,21 +4,23 @@ var gulp = require('gulp'),
     babelify = require('babelify'),
     del = require('del'),
     connect = require('connect'),
-    static = require('serve-static');
+    static = require('serve-static'),
+    babel = require('gulp-babel');
 
+var compilerOptions = { optional: [
+  'es7.exponentiationOperator',
+  'es6.spec.blockScoping',
+  'es7.classProperties',
+  'es7.comprehensions',
+  'es7.decorators'
+]};
+
+var Compiler = babelify.configure(compilerOptions);
 
 gulp.task('serve', function () { connect().use(static('build', {index: 'index.html'})).listen(1337); });
 
 var files = ['src/app.js'];
 gulp.task('js', ['clean.js'], function() {
-  var Compiler = babelify.configure({ optional: [
-    'es7.exponentiationOperator',
-    'es6.spec.blockScoping',
-    'es7.classProperties',
-    'es7.comprehensions',
-    'es7.decorators'
-  ]});
-
   browserify(files).transform(Compiler).bundle().pipe(source('bundle.js')).pipe(gulp.dest('build/'));
 });
 
@@ -26,6 +28,10 @@ gulp.task('watch', function() {
   gulp.watch('src/partials/*.html', ['html.partials']);
   gulp.watch('src/index.html', ['html']);
   gulp.watch('src/**/*.js', ['js']);
+});
+
+gulp.task('build', function() {
+  return gulp.src('src/jobtime.js').pipe(babel(compilerOptions)).pipe(gulp.dest('prod/'));
 });
 
 gulp.task('html', ['clean.html'], function () {

@@ -41,7 +41,7 @@ class JobTime {
     $scope.week = {};
 
     /* bind utils after mount */
-    this.handlerProxyDay = this.handlerProxyDay.bind(this);
+    this.DayProxy = this.DayProxy.bind(null, $scope);
     this.tagsIsToggle = this.tagsIsToggle.bind(this);
     this.setLocalWeek = this.setLocalWeek.bind(this);
     this.onWeekUpdate = this.onWeekUpdate.bind(this);
@@ -132,9 +132,10 @@ class JobTime {
   /* create day object with handler - and add to store or return */
   newDay(day, add, flag) {
     var $scope = this.$scope, week = $scope.week;
+
     var data = { start: "09.00", end: "17.00", key: "unnamed" };
     /* if set new value - call handler*/
-    var $day = new Proxy(add ? (flag ? day : data) : day, { set: this.handlerProxyDay });
+    var $day = new this.DayProxy(add ? (flag ? day : data) : day);
     /* if flag add is active add to local week store */
     if (add) {
       flag = flag ? flag : "unnamed";
@@ -169,19 +170,19 @@ class JobTime {
   }
 
   /* proxy hanler if change values */
-  handlerProxyDay(target, name, value) {
-    var $scope = this.$scope, oldname = target[name];
-    if (name == "key") {
-      /* set new key value */
-      target[name] = value;
-      /* update object key name in week scope object */
-      $scope.week.renameKey(oldname, target[name]);
-    } else {
-      target[name] = value;
-    }
+  DayProxy($scope, day) {
+    this.start = day.start; this.end = day.end;
+    var key = day.key;
 
-    /* complete success */
-    return true;
+    /* emulate proxy for watch key prop & update key in week*/
+    Object.defineProperty(this, "key", {
+      get() { return key; },
+      set(value) {
+        var oldkey = key;
+        key = value;
+        $scope.week.renameKey(oldkey, value);
+      }
+    });
   }
 
   /* save data in global binding */
@@ -222,4 +223,10 @@ class TimeValidator {
   }
 }
 
-export {JobTime, TimeValidator};
+if (typeof(exports) != "undefined") {
+  module.exports = {TimeValidator, JobTime};
+} else {
+  angular.module('jobtime', ['ngMaterial']);
+  register('jobtime').directive('jobTime', JobTime);
+  register('jobtime').directive('validtime', TimeValidator);
+}

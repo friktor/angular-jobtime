@@ -1,6 +1,9 @@
 /**
  * A helper class to simplify registering Angular components and provide a consistent syntax for doing so.
  */
+'use strict';
+
+var _bind = Function.prototype.bind;
 function register(appName) {
 
     var app = angular.module(appName);
@@ -11,6 +14,7 @@ function register(appName) {
         service: service,
         provider: provider,
         factory: factory
+
     };
 
     function directive(name, constructorFn) {
@@ -19,7 +23,7 @@ function register(appName) {
 
         if (!constructorFn.prototype.compile) {
             // create an empty compile function if none was defined.
-            constructorFn.prototype.compile = () => {};
+            constructorFn.prototype.compile = function () {};
         }
 
         var originalCompileFn = _cloneFunction(constructorFn.prototype.compile);
@@ -106,9 +110,13 @@ function register(appName) {
         var factoryArray = args.slice(); // create a copy of the array
         // The factoryArray uses Angular's array notation whereby each element of the array is the name of a
         // dependency, and the final item is the factory function itself.
-        factoryArray.push((...args) => {
+        factoryArray.push(function () {
+            for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                args[_key] = arguments[_key];
+            }
+
             //return new constructorFn(...args);
-            var instance = new constructorFn(...args);
+            var instance = new (_bind.apply(constructorFn, [null].concat(args)))();
             for (var key in instance) {
                 instance[key] = instance[key];
             }
@@ -124,7 +132,7 @@ function register(appName) {
      * @returns {Function}
      */
     function _cloneFunction(original) {
-        return function() {
+        return function () {
             return original.apply(this, arguments);
         };
     }
@@ -136,9 +144,6 @@ function register(appName) {
      * @param callback
      */
     function _override(object, methodName, callback) {
-        object[methodName] = callback(object[methodName])
+        object[methodName] = callback(object[methodName]);
     }
-
 }
-
-module.exports = register;
