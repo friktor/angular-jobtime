@@ -17,9 +17,6 @@
   .item md-select { width: 25%; margin: 0; margin-top: -4px; }
   .item .time { width: 35%; }
 
-  .errors {color: #F44336; text-align: center;}
-  .errors p {border-bottom: 1px dashed #F44336;}
-
   @media screen and (max-width: 1024px) {
     job-time { width: 85%; }
   }
@@ -60,11 +57,6 @@
         <label>End time</label>
         <input ng-disabled="tags.around" ng-model="value.end" validtime>
       </md-input-container>
-    </div>
-    <div ng-show="errors.length > 0" class="errors">
-      <p>Errors</p>
-      {{errors}}
-      <span ng-repeat="error in errors">{{error}} <br></span>
     </div>
   </div>
   <div class="center">

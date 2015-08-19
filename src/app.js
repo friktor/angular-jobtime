@@ -15,9 +15,9 @@ register('App').directive('validtime', TimeValidator);
 
 App.controller('IndexCtrl', ["$scope", ($scope) => {
   $scope.days = {
-    monday: { start: "09.00", end: "17.00" },
-    sunday: { start: "09.00", end: "17.00" }
+    everyday: { start: "09.00", end: "17.00" },
   }
+  $scope.errors = [];
 }]);
 
 /* bootstrap app*/

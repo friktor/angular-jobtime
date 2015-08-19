@@ -5,11 +5,31 @@
     <link href='http://fonts.googleapis.com/css?family=Roboto:400,500' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="angular-material.css">
     <style>
-      body {background-color: #EEEEEE; margin: 0; display: flex; justify-content: center; align-items: center;}
       * {font-family: 'Roboto';}
+
+      body {
+        background-color: #EEEEEE;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        display: flex;
+        margin: 0;
+      }
+      .errors {
+        margin-bottom: 15px;
+        text-align: center;
+        color: #F44336;
+      }
+      .errors p {
+        border-bottom: 1px dashed #F44336;
+      }
     </style>
   </head>
   <body ng-controller="IndexCtrl">
+    <div ng-show="errors.length > 0" class="errors">
+      <p>Errors</p>
+      <span ng-repeat="error in errors">{{error}} <br></span>
+    </div>
     <!-- {{days}} -->
     <!-- Directive with main actions -->
     <job-time days="days"></job-time>

@@ -147,3 +147,8 @@ function register(appName) {
         object[methodName] = callback(object[methodName]);
     }
 }
+
+
+if (typeof(exports) != "undefined") {
+  module.exports = register;
+}

@@ -21,7 +21,7 @@ function validTime(time) {
 class JobTime {
   constructor() {
     this.templateUrl = "partials/jobtime.html";
-    this.$scope = { days: "=" };
+    this.$scope = { days: "=", errors: "=" };
     this.restrict = "E";
 
     this.workday = ["monday", "tuesday", "wednesday", "thursday", "friday"];
@@ -114,18 +114,16 @@ class JobTime {
   /* local week schema */
   setLocalWeek() {
     var $scope = this.$scope, store = $scope.days, self = this;
-    [this.workday, this.weekend].forEach((days, index) => {
-      days.forEach((day, i) => {
-        var $day = store[day]; /* day data from global store */
-        /* set value for local store in instance*/
-        if ($day) {
-          let {start, end} = $day; /* get values */
-          /* set object value as Proxy */
-          $scope.week[day] = this.newDay({
-            start: start, end: end, key: day
-          }, false);
-        }
-      });
+    this.week.concat(this.mixins).forEach((day, i) => {
+      var $day = store[day]; /* day data from global store */
+      /* set value for local store in instance*/
+      if ($day) {
+        let {start, end} = $day; /* get values */
+        /* set object value as Proxy */
+        $scope.week[day] = this.newDay({
+          start: start, end: end, key: day
+        }, false);
+      }
     });
   }
 
