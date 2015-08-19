@@ -35,7 +35,7 @@ JobTime = (function () {
     _classCallCheck(this, _temporalAssertDefined(JobTime, "JobTime", _temporalUndefined) && JobTime);
 
     this.templateUrl = "partials/jobtime.html";
-    this.$scope = { days: "=" };
+    this.$scope = { days: "=", errors: "=" };
     this.restrict = "E";
 
     this.workday = ["monday", "tuesday", "wednesday", "thursday", "friday"];
@@ -154,20 +154,18 @@ JobTime = (function () {
       var $scope = this.$scope,
           store = $scope.days,
           self = this;
-      [this.workday, this.weekend].forEach(function (days, index) {
-        days.forEach(function (day, i) {
-          var $day = store[day]; /* day data from global store */
-          /* set value for local store in instance*/
-          if ($day) {
-            var start = $day.start;
-            var end = $day.end;
-            /* get values */
-            /* set object value as Proxy */
-            $scope.week[day] = _this.newDay({
-              start: _temporalAssertDefined(start, "start", _temporalUndefined) && start, end: _temporalAssertDefined(end, "end", _temporalUndefined) && end, key: day
-            }, false);
-          }
-        });
+      this.week.concat(this.mixins).forEach(function (day, i) {
+        var $day = store[day]; /* day data from global store */
+        /* set value for local store in instance*/
+        if ($day) {
+          var start = $day.start;
+          var end = $day.end;
+          /* get values */
+          /* set object value as Proxy */
+          $scope.week[day] = _this.newDay({
+            start: _temporalAssertDefined(start, "start", _temporalUndefined) && start, end: _temporalAssertDefined(end, "end", _temporalUndefined) && end, key: day
+          }, false);
+        }
       });
     }
 
@@ -297,7 +295,7 @@ TimeValidator = (function () {
 if (typeof exports != "undefined") {
   module.exports = { TimeValidator: _temporalAssertDefined(TimeValidator, "TimeValidator", _temporalUndefined) && TimeValidator, JobTime: _temporalAssertDefined(JobTime, "JobTime", _temporalUndefined) && JobTime };
 } else {
-  angular.module('jobtime', ['ngMaterial']);
+  angular.module('jobtime', ['ngMaterial', 'pascalprecht.translate']);
   register('jobtime').directive('jobTime', _temporalAssertDefined(JobTime, "JobTime", _temporalUndefined) && JobTime);
   register('jobtime').directive('validtime', _temporalAssertDefined(TimeValidator, "TimeValidator", _temporalUndefined) && TimeValidator);
 }

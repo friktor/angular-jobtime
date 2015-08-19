@@ -224,7 +224,7 @@ class TimeValidator {
 if (typeof(exports) != "undefined") {
   module.exports = {TimeValidator, JobTime};
 } else {
-  angular.module('jobtime', ['ngMaterial']);
+  angular.module('jobtime', ['ngMaterial', 'pascalprecht.translate']);
   register('jobtime').directive('jobTime', JobTime);
   register('jobtime').directive('validtime', TimeValidator);
 }

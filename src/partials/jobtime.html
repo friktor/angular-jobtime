@@ -28,17 +28,17 @@
 </style>
 
 <div class="container">
-  <h4 class="header">Work Time</h4>
+  <h4 class="header" translate>COMPANY.JOBTIME.HEADER</h4>
   <div class="topbar">
-    <h4 class="header">Time & Days of work</h4>
+    <h4 class="header" translate>COMPANY.JOBTIME.SUBHEADER</h4>
     <div class="tag-props">
       <md-checkbox ng-model="tags.everyday">
-        Everyday
+        <span translate>COMPANY.JOBTIME.EVERYDAY</span>
       </md-checkbox>
     </div>
     <div class="tag-props">
       <md-checkbox ng-model="tags.around">
-        Around the clock
+        <span translate>COMPANY.JOBTIME.AROUNDTHECLOCK</span>
       </md-checkbox>
     </div>
   </div>
@@ -46,25 +46,29 @@
     <div class="item" ng-repeat="(key, value) in week">
       <a ng-click="remove(key)">X</a>
       <md-select ng-model="value.key" aria-label="day select">
-        <md-option ng-value="key">{{key}}</md-option>
-        <md-option ng-value="$day" ng-repeat="(index, $day) in allowed()">{{$day}}</md-option>
+        <md-option ng-value="key">
+          <span translate>{{ 'COMPANY.JOBTIME.'+key.toUpperCase() }}</span>
+        </md-option>
+        <md-option ng-value="$day" ng-repeat="(index, $day) in allowed()">
+          <span translate>{{ 'COMPANY.JOBTIME.'+$day.toUpperCase() }}</span>
+        </md-option>
       </md-select>
       <md-input-container class="time">
-        <label>Start time</label>
+        <label translate>COMPANY.JOBTIME.TIME.START</label>
         <input ng-disabled="tags.around" ng-model="value.start" validtime>
       </md-input-container>
       <md-input-container class="time">
-        <label>End time</label>
+        <label translate>COMPANY.JOBTIME.TIME.END</label>
         <input ng-disabled="tags.around" ng-model="value.end" validtime>
       </md-input-container>
     </div>
   </div>
   <div class="center">
     <md-button ng-disabled="tags.everyday" class="md-primary" ng-click="newDay()">
-      + Add More
+      <span translate>COMPANY.JOBTIME.ADD</span>
     </md-button>
     <md-button ng-click="save()">
-      Save
+      <span translate>COMPANY.JOBTIME.SAVE</span>
     </md-button>
   </div>
 </div>
